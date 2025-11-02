@@ -1,113 +1,186 @@
-// =========================
-// 🌐 API CONFIGURATION
-// =========================
+const API_URL = 'https://apicurso.bobinadosdumalek.es';
 
-const API_URL = "https://apicurso.bobinadosdumalek.es/api";
-
-// Helper para peticiones con manejo de token
-async function request(endpoint: string, options: RequestInit = {}) {
-  const token = localStorage.getItem("token");
-
-  const headers = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...options.headers,
+// Helper para hacer requests con autenticación
+async function fetchWithAuth(url: string, options: RequestInit = {}) {
+  const token = localStorage.getItem('token');
+  
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
   };
-
-  const res = await fetch(`${API_URL}${endpoint}`, {
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const response = await fetch(url, {
     ...options,
     headers,
   });
-
-  // Si la sesión expira, borrar token
-  if (res.status === 401) {
-    localStorage.removeItem("token");
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || `HTTP error! status: ${response.status}`);
   }
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || res.statusText);
+  
+  const text = await response.text();
+  
+  if (!text) return null;
+  
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error('Failed to parse JSON:', text);
+    return text;
   }
-
-  return res.json();
 }
 
-// =========================
-// 🧠 API Abstraction
-// =========================
-
 export const customApi = {
-  get: (endpoint: string) => request(endpoint),
-  post: (endpoint: string, body: any) =>
-    request(endpoint, {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
-  put: (endpoint: string, body: any) =>
-    request(endpoint, {
-      method: "PUT",
-      body: JSON.stringify(body),
-    }),
-  del: (endpoint: string) =>
-    request(endpoint, {
-      method: "DELETE",
-    }),
-
-  // Auth helpers
   auth: {
-    async isAuthenticated() {
+    register: async (data: { email: string; password: string; full_name: string }) => {
+      console.log('Registering with:', { ...data, password: '***' });
+      
+      const response = await fetch(`${API_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      const text = await response.text();
+      console.log('Register response text:', text);
+      
+      if (!response.ok) {
+        throw new Error(text || 'Error al registrar');
+      }
+      
       try {
-        const me = await request("/users/me");
-        return !!me;
+        const result = JSON.parse(text);
+        if (result.token) {
+          localStorage.setItem('token', result.token);
+        }
+        return result;
+      } catch (e) {
+        console.error('Parse error:', e);
+        throw new Error('Respuesta inválida del servidor: ' + text);
+      }
+    },
+    
+    login: async (data: { email: string; password: string }) => {
+      console.log('Login attempt with email:', data.email);
+      console.log('Sending to:', `${API_URL}/api/auth/login`);
+      
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      const text = await response.text();
+      console.log('Response text:', text);
+      console.log('Response text length:', text.length);
+      console.log('First 100 chars:', text.substring(0, 100));
+      
+      if (!response.ok) {
+        throw new Error(text || 'Credenciales incorrectas');
+      }
+      
+      try {
+        const result = JSON.parse(text);
+        console.log('Parsed result:', result);
+        
+        if (result.token) {
+          localStorage.setItem('token', result.token);
+          console.log('Token saved');
+        }
+        return result;
+      } catch (e) {
+        console.error('JSON parse error:', e);
+        console.error('Raw text was:', text);
+        throw new Error('Respuesta inválida del servidor. Ver consola para detalles.');
+      }
+    },
+    
+    logout: (redirectUrl?: string) => {
+      localStorage.removeItem('token');
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      }
+    },
+    
+    me: async () => {
+      return fetchWithAuth(`${API_URL}/api/users/me`);
+    },
+    
+    isAuthenticated: async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return false;
+      try {
+        await fetchWithAuth(`${API_URL}/api/users/me`);
+        return true;
       } catch {
         return false;
       }
     },
-
-    async login(credentials: { email: string; password: string }) {
-      const data = await request("/auth/login", {
-        method: "POST",
-        body: JSON.stringify(credentials),
-      });
-      if (data?.token) localStorage.setItem("token", data.token);
-      return data;
-    },
-
-    async register(user: {
-      full_name: string;
-      email: string;
-      password: string;
-    }) {
-      const data = await request("/auth/register", {
-        method: "POST",
-        body: JSON.stringify(user),
-      });
-      if (data?.token) localStorage.setItem("token", data.token);
-      return data;
-    },
-
-    logout() {
-      localStorage.removeItem("token");
-    },
+  },
+  
+  lessons: {
+    list: (sortBy?: string) => fetchWithAuth(`${API_URL}/api/lessons`),
+    get: (id: string) => fetchWithAuth(`${API_URL}/api/lessons/${id}`),
+    create: (data: any) => fetchWithAuth(`${API_URL}/api/lessons`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    update: (id: string, data: any) => fetchWithAuth(`${API_URL}/api/lessons/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+    delete: (id: string) => fetchWithAuth(`${API_URL}/api/lessons/${id}`, {
+      method: 'DELETE',
+    }),
+  },
+  
+  progress: {
+    list: (userEmail: string) => fetchWithAuth(`${API_URL}/api/progress`),
+    create: (data: any) => fetchWithAuth(`${API_URL}/api/progress`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    update: (id: string, data: any) => fetchWithAuth(`${API_URL}/api/progress/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  },
+  
+  files: {
+    list: () => fetchWithAuth(`${API_URL}/api/files`),
+    get: (id: string) => fetchWithAuth(`${API_URL}/api/files/${id}`),
+    create: (data: any) => fetchWithAuth(`${API_URL}/api/files`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    delete: (id: string) => fetchWithAuth(`${API_URL}/api/files/${id}`, {
+      method: 'DELETE',
+    }),
+  },
+  
+  payments: {
+    createCheckoutSession: (data: any) => fetchWithAuth(`${API_URL}/api/payments/create-checkout-session`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
   },
 };
 
-// =========================
-// 🧭 Helpers
-// =========================
-
-export function createPageUrl(pageName: string) {
-  const pages: Record<string, string> = {
-    Landing: "/",
-    Dashboard: "/dashboard",
-    Curso: "/curso",
-    Descargas: "/descargas",
-    Configuracion: "/configuracion",
-    Perfil: "/perfil",
-    GestionarVideos: "/gestionarvideos",
-    Login: "/login",
-    Register: "/register",
-  };
-  return pages[pageName] || "/";
+export function createPageUrl(pageName: string, params?: Record<string, string>) {
+  const basePath = '/' + pageName.toLowerCase().replace(/ /g, '-');
+  
+  if (params) {
+    const queryString = new URLSearchParams(params).toString();
+    return `${basePath}?${queryString}`;
+  }
+  
+  return basePath;
 }
-

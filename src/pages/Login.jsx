@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { customApi, createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -18,10 +20,16 @@ export default function LoginPage() {
     setErr("");
     setLoading(true);
     try {
-      const cleanEmail = String(form.email).trim().replace(/^"+|"+$/g, "");
-      const cleanPassword = String(form.password).trim().replace(/^"+|"+$/g, "");
-      await customApi.auth.login(cleanEmail, cleanPassword);
-      navigate(createPageUrl("Dashboard"));
+      const res = await customApi.auth.login({
+        email: form.email.trim(),
+        password: form.password.trim()
+      });
+      const user = res?.user || {};
+      if (user.status === "pending_payment") {
+        navigate("/pago");
+      } else {
+        navigate(createPageUrl("Dashboard"));
+      }
     } catch (error) {
       setErr(error?.message || "Error al iniciar sesión");
     } finally {
@@ -29,11 +37,16 @@ export default function LoginPage() {
     }
   };
 
+  const socialLogin = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-cyan-900 flex items-center justify-center px-4">
       <Card className="bg-white/95 border-0 shadow-2xl w-full max-w-md">
         <CardContent className="p-8">
-          <h1 className="text-2xl font-bold mb-6 text-slate-900">Zona Alumno</h1>
+          <h1 className="text-3xl font-extrabold mb-6 text-center text-slate-900">Zona Alumno</h1>
+
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
               <Label>Email</Label>
@@ -53,11 +66,13 @@ export default function LoginPage() {
                 required
               />
             </div>
+
             {err && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
                 {err}
               </div>
             )}
+
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
@@ -72,7 +87,18 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-          <p className="text-sm text-slate-500 mt-4 text-center">
+
+          {/* Google Login */}
+          <div className="mt-6 border-t border-slate-200 pt-6">
+            <Button
+              onClick={socialLogin}
+              className="w-full bg-white text-slate-900 flex items-center justify-center gap-2 border hover:bg-slate-50"
+            >
+              <FcGoogle className="w-5 h-5" /> Iniciar con Google
+            </Button>
+          </div>
+
+          <p className="text-sm text-slate-500 mt-6 text-center">
             ¿No tienes cuenta?{" "}
             <button
               className="text-cyan-700 underline"
