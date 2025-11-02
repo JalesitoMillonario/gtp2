@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { customApi, createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
@@ -19,18 +18,27 @@ export default function LoginPage() {
     e.preventDefault();
     setErr("");
     setLoading(true);
+    
     try {
       const res = await customApi.auth.login({
         email: form.email.trim(),
         password: form.password.trim()
       });
-      const user = res?.user || {};
-      if (user.status === "pending_payment") {
+      
+      console.log("Login response:", res);
+      
+      // Obtener datos del usuario
+      const user = await customApi.auth.me();
+      console.log("User data:", user);
+      
+      // Verificar si ha pagado
+      if (user.is_paid === 0 || user.status === "pending_payment") {
         navigate("/pago");
       } else {
-        navigate(createPageUrl("Dashboard"));
+        navigate("/dashboard");
       }
     } catch (error) {
+      console.error("Login error:", error);
       setErr(error?.message || "Error al iniciar sesión");
     } finally {
       setLoading(false);
@@ -88,7 +96,6 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* Google Login */}
           <div className="mt-6 border-t border-slate-200 pt-6">
             <Button
               onClick={socialLogin}

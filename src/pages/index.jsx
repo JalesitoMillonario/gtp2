@@ -5,6 +5,8 @@ import Layout from "./Layout";
 import Landing from "./Landing";
 import Login from "./Login";
 import Register from "./Register";
+import SocialLogin from "./SocialLogin";
+import Pago from "./Pago";
 import Dashboard from "./Dashboard";
 import Curso from "./Curso";
 import Descargas from "./Descargas";
@@ -32,10 +34,12 @@ export default function Pages() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          {/* Landing, Login y Register sin Layout */}
+          {/* Rutas públicas sin Layout */}
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/social-login" element={<SocialLogin />} />
+          <Route path="/pago" element={<Pago />} />
 
           {/* Páginas internas con Layout */}
           {pagesConfig.pages
