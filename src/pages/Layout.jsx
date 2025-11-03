@@ -1,308 +1,189 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { customApi, createPageUrl } from "@/utils";
-import {
-  BookOpen,
-  Download,
-  Zap,
-  Menu,
-  LogOut,
-  CircuitBoard,
-  User,
-  Settings,
-  Award,
-  TrendingUp,
-  Video,
-  Sparkles,
-  X
-} from "lucide-react";
+import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
+import { Menu, X, LogOut, Home, BookOpen, Download, Settings, User, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-const modules = [
-  {
-    id: "introduccion",
-    title: "Introducción",
-    icon: BookOpen,
-    gradient: "from-cyan-500 to-blue-500"
-  },
-  {
-    id: "proyecto_1",
-    title: "Proyecto 1",
-    icon: Zap,
-    gradient: "from-purple-500 to-pink-500"
-  },
-  {
-    id: "proyecto_2",
-    title: "Proyecto 2",
-    icon: CircuitBoard,
-    gradient: "from-green-500 to-emerald-500"
-  }
-];
+const API_URL = 'https://apicurso.bobinadosdumalek.es/api';
 
-export default function Layout({ children, currentPageName }) {
-  const location = useLocation();
+export default function Layout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
-  const [userLoaded, setUserLoaded] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    customApi.auth.me()
-      .then(setUser)
-      .catch(() => setUser(null))
-      .finally(() => setUserLoaded(true));
-  }, []);
+    const getUser = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate("/login");
+          return;
+        }
 
-  const { data: lessons = [] } = useQuery({
-    queryKey: ['lessons'],
-    queryFn: () => customApi.lessons.list('order'),
-    initialData: [],
-    enabled: userLoaded,
-  });
+        const res = await fetch(`${API_URL}/users/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-  const { data: progress = [] } = useQuery({
-    queryKey: ['progress', user?.email],
-    queryFn: () => user ? customApi.progress.list(user.email) : [],
-    enabled: !!user,
-    initialData: [],
-  });
-
-  const getModuleProgress = (moduleId) => {
-    const moduleLessons = lessons.filter(l => l.module === moduleId);
-    if (moduleLessons.length === 0) return 0;
-
-    const completedLessons = moduleLessons.filter(lesson =>
-      progress.some(p => p.lesson_id === lesson.id && p.completed)
-    );
-
-    return Math.round((completedLessons.length / moduleLessons.length) * 100);
-  };
-
-  const getTotalProgress = () => {
-    if (lessons.length === 0) return 0;
-    const completedLessons = lessons.filter(lesson =>
-      progress.some(p => p.lesson_id === lesson.id && p.completed)
-    );
-    return Math.round((completedLessons.length / lessons.length) * 100);
-  };
-
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
+        if (!res.ok) throw new Error('No autorizado');
+        const data = await res.json();
+        setUser(data);
+      } catch (err) {
+        console.error('Error:', err);
+        navigate("/login");
+      } finally {
+        setLoading(false);
+      }
+    };
+    getUser();
+  }, [navigate]);
 
   const handleLogout = () => {
-    customApi.auth.logout(createPageUrl("Landing"));
+    localStorage.removeItem('token');
+    navigate("/login");
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const menuItems = [
+    { icon: Home, label: 'Dashboard', href: '/dashboard' },
+    { icon: BookOpen, label: 'Mi Curso', href: '/curso?module=introduccion' },
+    { icon: Download, label: 'Recursos', href: '/descargas' },
+    { icon: Settings, label: 'Configuración', href: '/configuracion' },
+    ...(user?.role === 'admin' ? [
+      { icon: Shield, label: 'Panel Admin', href: '/admin' }
+    ] : [])
+  ];
+
+  const isActive = (href) => location.pathname === href || location.pathname.startsWith(href + '?');
+
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      {/* SIDEBAR */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 transform transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        {/* Header del Sidebar */}
-        <div className="border-b border-slate-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <img
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fa08262087c0b6826136b9/85babb091_images2.png"
-              alt="Bobinados Dumalek"
-              className="h-12 w-12 object-cover rounded-full border-2 border-cyan-400 shadow-lg"
-            />
+    <div className="flex h-screen bg-slate-50">
+      {/* Sidebar */}
+      <aside className={`${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      } lg:translate-x-0 fixed lg:relative w-64 h-screen bg-white border-r border-slate-200 shadow-sm transition-transform duration-300 z-40 flex flex-col`}>
+        
+        {/* Logo */}
+        <div className="p-6 border-b border-slate-100">
+          <Link to="/dashboard" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+              <span className="text-white font-bold text-lg">BD</span>
+            </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Electrónica + IA</h2>
-              <p className="text-xs text-slate-600">Masterclass</p>
+              <h2 className="font-bold text-slate-900 text-sm">Bobinados</h2>
+              <p className="text-xs text-slate-500">Dumalek</p>
             </div>
-          </div>
+          </Link>
+        </div>
 
+        {/* Navigation */}
+        <nav className="flex-1 p-4 overflow-y-auto">
+          <div className="space-y-1">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                    active
+                      ? 'bg-blue-50 text-blue-600 font-medium'
+                      : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{item.label}</span>
+                  {active && (
+                    <div className="ml-auto w-1.5 h-1.5 bg-blue-600 rounded-full" />
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+
+        {/* User Section */}
+        <div className="p-4 border-t border-slate-100 space-y-3">
           {user && (
-            <div className="p-4 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl border border-cyan-200">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-xs text-slate-600 flex items-center gap-2">
-                  <TrendingUp className="w-3 h-3" />
-                  Progreso Total
-                </div>
-                <Badge className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-0">
-                  {getTotalProgress()}%
-                </Badge>
+            <>
+              <div className="px-4 py-3 bg-slate-50 rounded-lg">
+                <p className="font-medium text-slate-900 text-sm truncate">{user.full_name}</p>
+                <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                {user.role === 'admin' && (
+                  <span className="inline-block mt-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                    Administrador
+                  </span>
+                )}
               </div>
-              <Progress value={getTotalProgress()} className="h-2.5" />
-            </div>
-          )}
-        </div>
-
-        {/* Menú del Sidebar */}
-        <div className="p-4 overflow-y-auto h-[calc(100vh-300px)]">
-          {/* Principal */}
-          <div className="mb-6">
-            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider px-3 py-3 flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              Principal
-            </p>
-            <Link
-              to={createPageUrl("Dashboard")}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
-                currentPageName === 'Dashboard'
-                  ? 'bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-300'
-                  : 'border-slate-200 hover:border-cyan-300 hover:bg-slate-50'
-              }`}
-            >
-              <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 shadow-md">
-                <TrendingUp className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-medium text-slate-900">Dashboard</span>
-            </Link>
-          </div>
-
-          {/* Módulos */}
-          <div className="mb-6">
-            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider px-3 py-3 flex items-center gap-2">
-              <Award className="w-4 h-4" />
-              Módulos del Curso
-            </p>
-            <div className="space-y-2">
-              {modules.map((module) => {
-                const ModuleIcon = module.icon;
-                const moduleProgress = user ? getModuleProgress(module.id) : 0;
-                const moduleLessons = lessons.filter(l => l.module === module.id);
-
-                const queryParams = new URLSearchParams(location.search);
-                const activeModuleId = queryParams.get('module');
-                const isActive = location.pathname.includes('curso') && activeModuleId === module.id;
-
-                return (
-                  <Link
-                    key={module.id}
-                    to={createPageUrl("Curso", { module: module.id })}
-                    className="block"
+              <div className="flex gap-2">
+                <Link to="/perfil" className="flex-1">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-slate-600 border-slate-200 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 transition-colors"
                   >
-                    <div className={`p-4 rounded-xl transition-all duration-300 border ${
-                      isActive
-                        ? 'bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-300 shadow-sm'
-                        : 'border-slate-200 hover:border-cyan-300 hover:bg-slate-50'
-                    }`}>
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className={`p-2.5 rounded-lg bg-gradient-to-br ${module.gradient} shadow-md`}>
-                          <ModuleIcon className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-semibold text-slate-900 text-sm">{module.title}</div>
-                          <div className="text-xs text-slate-500">{moduleLessons.length} lecciones</div>
-                        </div>
-                      </div>
-                      {user && (
-                        <div className="space-y-1.5">
-                          <Progress value={moduleProgress} className="h-2" />
-                          <div className="flex justify-between text-xs">
-                            <span className="text-slate-500">Completado</span>
-                            <span className="font-semibold text-cyan-600">
-                              {moduleProgress}%
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Recursos */}
-          <div>
-            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider px-3 py-3">
-              Recursos
-            </p>
-            <Link
-              to={createPageUrl("Descargas")}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
-                currentPageName === 'Descargas'
-                  ? 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-300'
-                  : 'border-slate-200 hover:border-purple-300 hover:bg-slate-50'
-              }`}
-            >
-              <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 shadow-md">
-                <Download className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-medium text-slate-900">Descargas</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Footer del Sidebar */}
-        <div className="absolute bottom-0 left-0 right-0 border-t border-slate-200 p-4 bg-white">
-          {user ? (
-            <div className="space-y-2">
-              <Link to={createPageUrl("Perfil")}>
-                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer">
-                  <Avatar className="w-10 h-10 border-2 border-cyan-300">
-                    <AvatarFallback className="bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-bold text-sm">
-                      {getInitials(user.full_name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-900 text-sm truncate">{user.full_name || 'Usuario'}</p>
-                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
-                  </div>
-                </div>
-              </Link>
-
-              <div className="grid grid-cols-2 gap-2">
+                    <User className="w-4 h-4 mr-2" />
+                    <span className="text-sm">Perfil</span>
+                  </Button>
+                </Link>
                 <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className="border-slate-300 hover:bg-slate-100 text-slate-900"
-                >
-                  <Link to={createPageUrl("Configuracion")}>
-                    <Settings className="w-3 h-3 mr-1" />
-                    Ajustes
-                  </Link>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
                   onClick={handleLogout}
-                  className="border-slate-300 hover:bg-red-50 hover:border-red-300 text-slate-900 hover:text-red-600"
+                  variant="outline"
+                  className="flex-1 justify-start text-slate-600 border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors"
                 >
-                  <LogOut className="w-3 h-3 mr-1" />
-                  Salir
+                  <LogOut className="w-4 h-4 mr-2" />
+                  <span className="text-sm">Salir</span>
                 </Button>
               </div>
-            </div>
-          ) : null}
+            </>
+          )}
         </div>
       </aside>
 
-      {/* MAIN CONTENT */}
-      <div className="flex-1 lg:ml-72">
-        {/* Mobile Header */}
-        <header className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-40">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-slate-100 rounded-lg"
-          >
-            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-          <h1 className="font-bold text-slate-900">Electrónica + IA</h1>
-          <div className="w-9" />
-        </header>
-
-        {/* Page Content */}
-        <main className="min-h-screen">
-          {children}
-        </main>
-      </div>
-
-      {/* Overlay para cerrar sidebar en móvil */}
+      {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/30 lg:hidden z-30 backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        
+        {/* Top Bar */}
+        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between lg:hidden shadow-sm">
+          <h1 className="font-bold text-slate-900">Electrónica + IA</h1>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            {sidebarOpen ? (
+              <X className="w-6 h-6 text-slate-600" />
+            ) : (
+              <Menu className="w-6 h-6 text-slate-600" />
+            )}
+          </button>
+        </header>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-auto">
+          <div className="bg-gradient-to-br from-slate-50 to-slate-100 min-h-full">
+            <Outlet />
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

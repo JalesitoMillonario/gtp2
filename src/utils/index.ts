@@ -38,8 +38,6 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
 export const customApi = {
   auth: {
     register: async (data: { email: string; password: string; full_name: string }) => {
-      console.log('Registering with:', { ...data, password: '***' });
-      
       const response = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -47,67 +45,39 @@ export const customApi = {
       });
       
       const text = await response.text();
-      console.log('Register response text:', text);
-      
-      if (!response.ok) {
-        throw new Error(text || 'Error al registrar');
-      }
+      if (!response.ok) throw new Error(text || 'Error al registrarse');
       
       try {
         const result = JSON.parse(text);
-        if (result.token) {
-          localStorage.setItem('token', result.token);
-        }
+        if (result.token) localStorage.setItem('token', result.token);
         return result;
       } catch (e) {
-        console.error('Parse error:', e);
-        throw new Error('Respuesta inválida del servidor: ' + text);
+        throw new Error('Respuesta inválida');
       }
     },
     
     login: async (data: { email: string; password: string }) => {
-      console.log('Login attempt with email:', data.email);
-      console.log('Sending to:', `${API_URL}/api/auth/login`);
-      
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
       
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-      
       const text = await response.text();
-      console.log('Response text:', text);
-      console.log('Response text length:', text.length);
-      console.log('First 100 chars:', text.substring(0, 100));
-      
-      if (!response.ok) {
-        throw new Error(text || 'Credenciales incorrectas');
-      }
+      if (!response.ok) throw new Error(text || 'Credenciales incorrectas');
       
       try {
         const result = JSON.parse(text);
-        console.log('Parsed result:', result);
-        
-        if (result.token) {
-          localStorage.setItem('token', result.token);
-          console.log('Token saved');
-        }
+        if (result.token) localStorage.setItem('token', result.token);
         return result;
       } catch (e) {
-        console.error('JSON parse error:', e);
-        console.error('Raw text was:', text);
-        throw new Error('Respuesta inválida del servidor. Ver consola para detalles.');
+        throw new Error('Respuesta inválida');
       }
     },
     
     logout: (redirectUrl?: string) => {
       localStorage.removeItem('token');
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
-      }
+      if (redirectUrl) window.location.href = redirectUrl;
     },
     
     me: async () => {
@@ -127,7 +97,7 @@ export const customApi = {
   },
   
   lessons: {
-    list: (sortBy?: string) => fetchWithAuth(`${API_URL}/api/lessons`),
+    list: () => fetchWithAuth(`${API_URL}/api/lessons`),
     get: (id: string) => fetchWithAuth(`${API_URL}/api/lessons/${id}`),
     create: (data: any) => fetchWithAuth(`${API_URL}/api/lessons`, {
       method: 'POST',
@@ -143,7 +113,7 @@ export const customApi = {
   },
   
   progress: {
-    list: (userEmail: string) => fetchWithAuth(`${API_URL}/api/progress`),
+    list: () => fetchWithAuth(`${API_URL}/api/progress`),
     create: (data: any) => fetchWithAuth(`${API_URL}/api/progress`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -167,7 +137,7 @@ export const customApi = {
   },
   
   payments: {
-    createCheckoutSession: (data: any) => fetchWithAuth(`${API_URL}/api/payments/create-checkout-session`, {
+    createCheckout: (data: any) => fetchWithAuth(`${API_URL}/api/payments/create-checkout`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -176,11 +146,9 @@ export const customApi = {
 
 export function createPageUrl(pageName: string, params?: Record<string, string>) {
   const basePath = '/' + pageName.toLowerCase().replace(/ /g, '-');
-  
   if (params) {
     const queryString = new URLSearchParams(params).toString();
     return `${basePath}?${queryString}`;
   }
-  
   return basePath;
 }

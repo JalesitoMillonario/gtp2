@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,12 @@ import { useNavigate } from "react-router-dom";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ full_name: "", email: "", password: "", confirm: "" });
+  const [form, setForm] = useState({
+    full_name: "",
+    email: "",
+    password: "",
+    confirm: "",
+  });
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -19,7 +23,7 @@ export default function RegisterPage() {
     const handleMouseMove = (e) => {
       setMousePosition({
         x: (e.clientX / window.innerWidth) * 100,
-        y: (e.clientY / window.innerHeight) * 100
+        y: (e.clientY / window.innerHeight) * 100,
       });
     };
     window.addEventListener("mousemove", handleMouseMove);
@@ -29,8 +33,10 @@ export default function RegisterPage() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setErr("");
-    if (form.password !== form.confirm) return setErr("Las contraseñas no coinciden");
-    if (form.password.length < 6) return setErr("La contraseña debe tener al menos 6 caracteres");
+    if (form.password !== form.confirm)
+      return setErr("Las contraseñas no coinciden");
+    if (form.password.length < 6)
+      return setErr("La contraseña debe tener al menos 6 caracteres");
 
     setLoading(true);
     try {
@@ -41,13 +47,15 @@ export default function RegisterPage() {
           full_name: form.full_name.trim(),
           email: form.email.trim(),
           password: form.password.trim(),
-          status: "pending_payment"
-        })
+          status: "pending_payment",
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al registrarse");
       localStorage.setItem("token", data.token);
-      navigate("/pago");
+
+      // Redirigir a SocialLogin para verificación del estado
+      navigate(`/social-login?token=${data.token}`);
     } catch (error) {
       setErr(error?.message || "Error al registrarse");
     } finally {
@@ -61,15 +69,24 @@ export default function RegisterPage() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center text-white overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
-      {/* Background animation */}
       <motion.div
         className="absolute w-[700px] h-[700px] rounded-full bg-cyan-500/10 blur-3xl"
-        style={{ left: `${mousePosition.x}%`, top: `${mousePosition.y}%`, x: "-50%", y: "-50%" }}
+        style={{
+          left: `${mousePosition.x}%`,
+          top: `${mousePosition.y}%`,
+          x: "-50%",
+          y: "-50%",
+        }}
         transition={{ type: "spring", damping: 50, stiffness: 100 }}
       />
       <motion.div
         className="absolute w-[800px] h-[800px] rounded-full bg-purple-500/10 blur-3xl"
-        style={{ left: `${100 - mousePosition.x}%`, top: `${100 - mousePosition.y}%`, x: "-50%", y: "-50%" }}
+        style={{
+          left: `${100 - mousePosition.x}%`,
+          top: `${100 - mousePosition.y}%`,
+          x: "-50%",
+          y: "-50%",
+        }}
         transition={{ type: "spring", damping: 40, stiffness: 70 }}
       />
 
@@ -94,7 +111,9 @@ export default function RegisterPage() {
             <Input
               type="text"
               value={form.full_name}
-              onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, full_name: e.target.value }))
+              }
               required
               className="bg-white/10 border-cyan-500/20 text-white placeholder:text-slate-400"
             />
@@ -104,7 +123,9 @@ export default function RegisterPage() {
             <Input
               type="email"
               value={form.email}
-              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, email: e.target.value }))
+              }
               required
               className="bg-white/10 border-cyan-500/20 text-white placeholder:text-slate-400"
             />
@@ -114,7 +135,9 @@ export default function RegisterPage() {
             <Input
               type="password"
               value={form.password}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, password: e.target.value }))
+              }
               required
               className="bg-white/10 border-cyan-500/20 text-white"
             />
@@ -124,7 +147,9 @@ export default function RegisterPage() {
             <Input
               type="password"
               value={form.confirm}
-              onChange={(e) => setForm((f) => ({ ...f, confirm: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, confirm: e.target.value }))
+              }
               required
               className="bg-white/10 border-cyan-500/20 text-white"
             />

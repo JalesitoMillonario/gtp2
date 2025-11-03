@@ -18,22 +18,22 @@ export default function LoginPage() {
     e.preventDefault();
     setErr("");
     setLoading(true);
-    
+
     try {
       const res = await customApi.auth.login({
         email: form.email.trim(),
-        password: form.password.trim()
+        password: form.password.trim(),
       });
-      
+
       console.log("Login response:", res);
-      
+
       // Obtener datos del usuario
       const user = await customApi.auth.me();
       console.log("User data:", user);
-      
-      // Verificar si ha pagado
+
+      // Redirigir a SocialLogin si no ha pagado
       if (user.is_paid === 0 || user.status === "pending_payment") {
-        navigate("/pago");
+        navigate(`/social-login?token=${res.token}`);
       } else {
         navigate("/dashboard");
       }
@@ -53,7 +53,9 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-cyan-900 flex items-center justify-center px-4">
       <Card className="bg-white/95 border-0 shadow-2xl w-full max-w-md">
         <CardContent className="p-8">
-          <h1 className="text-3xl font-extrabold mb-6 text-center text-slate-900">Zona Alumno</h1>
+          <h1 className="text-3xl font-extrabold mb-6 text-center text-slate-900">
+            Zona Alumno
+          </h1>
 
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
@@ -61,7 +63,9 @@ export default function LoginPage() {
               <Input
                 type="email"
                 value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, email: e.target.value }))
+                }
                 required
               />
             </div>
@@ -70,7 +74,9 @@ export default function LoginPage() {
               <Input
                 type="password"
                 value={form.password}
-                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, password: e.target.value }))
+                }
                 required
               />
             </div>

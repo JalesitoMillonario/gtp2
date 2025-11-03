@@ -1,211 +1,203 @@
 import React, { useState, useEffect } from "react";
-import { customApi, createPageUrl } from "@/utils";
-import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Download, 
-  Search,
-  FileCode,
-  FileText,
-  FileImage,
-  File,
-  Filter
-} from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Download, Search, FileCode, FileText, FileImage, File, Package } from "lucide-react";
+
+const API_URL = 'https://apicurso.bobinadosdumalek.es/api';
 
 export default function DescargasPage() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   useEffect(() => {
-    customApi.auth.isAuthenticated().then(isAuth => {
-      if (!isAuth) {
-        navigate(createPageUrl("Landing"));
-      } else {
-        customApi.auth.me().then(setUser).catch(() => {
-          navigate(createPageUrl("Landing"));
+    const getFiles = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_URL}/files`, {
+          headers: { 'Authorization': `Bearer ${token}` }
         });
+        const data = await res.json();
+        setFiles(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Error:', err);
+      } finally {
+        setLoading(false);
       }
-    });
-  }, [navigate]);
-
-  const { data: files = [], isLoading } = useQuery({
-    queryKey: ['files'],
-    queryFn: () => customApi.files.list(),
-    initialData: [],
-  });
-
-  const getCategoryIcon = (category) => {
-    const icons = {
-      codigo: FileCode,
-      esquemas: FileImage,
-      datasheets: FileText,
-      diagramas: FileImage,
-      documentacion: FileText,
-      recursos: File,
-      librerias: FileCode
     };
-    return icons[category] || File;
+    getFiles();
+  }, []);
+
+  const categories = [
+    { value: 'all', label: 'Todos', color: 'from-slate-500 to-slate-600' },
+    { value: 'codigo', label: 'Código', color: 'from-blue-500 to-cyan-500' },
+    { value: 'esquemas', label: 'Esquemas', color: 'from-purple-500 to-pink-500' },
+    { value: 'datasheets', label: 'Datasheets', color: 'from-green-500 to-emerald-500' },
+    { value: 'documentacion', label: 'Documentación', color: 'from-orange-500 to-red-500' }
+  ];
+
+  const getCategoryIcon = (cat) => {
+    switch(cat) {
+      case 'codigo': return FileCode;
+      case 'esquemas': return FileImage;
+      case 'datasheets': return FileText;
+      default: return File;
+    }
   };
 
-  const getCategoryColor = (category) => {
-    const colors = {
-      codigo: "from-blue-500 to-cyan-500",
-      esquemas: "from-purple-500 to-pink-500",
-      datasheets: "from-green-500 to-emerald-500",
-      diagramas: "from-orange-500 to-red-500",
-      documentacion: "from-yellow-500 to-orange-500",
-      recursos: "from-indigo-500 to-purple-500",
-      librerias: "from-cyan-500 to-blue-500"
-    };
-    return colors[category] || "from-gray-500 to-slate-500";
+  const getCategoryColor = (cat) => {
+    const found = categories.find(c => c.value === cat);
+    return found?.color || 'from-gray-500 to-slate-500';
   };
 
   const filteredFiles = files.filter(file => {
-    const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (file.description && file.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === "all" || file.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       (file.description && file.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchCategory = selectedCategory === 'all' || file.category === selectedCategory;
+    return matchSearch && matchCategory;
   });
 
-  const categories = [
-    { value: "all", label: "Todas las categorías" },
-    { value: "codigo", label: "Código Fuente" },
-    { value: "esquemas", label: "Esquemas" },
-    { value: "datasheets", label: "Datasheets" },
-    { value: "diagramas", label: "Diagramas" },
-    { value: "documentacion", label: "Documentación" },
-    { value: "recursos", label: "Recursos" },
-    { value: "librerias", label: "Librerías" }
-  ];
+  const filesByModule = {
+    introduccion: filteredFiles.filter(f => f.module === 'introduccion'),
+    proyecto_1: filteredFiles.filter(f => f.module === 'proyecto_1'),
+    proyecto_2: filteredFiles.filter(f => f.module === 'proyecto_2')
+  };
 
-  if (!user) {
+  const moduleLabels = {
+    introduccion: '📚 Introducción',
+    proyecto_1: '⚡ Proyecto 1',
+    proyecto_2: '🔧 Proyecto 2'
+  };
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-slate-100">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Cargando...</p>
-        </div>
+      <div className="p-8 text-center">
+        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-slate-600">Cargando recursos...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100">
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+    <div className="p-6 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-12">
+          <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-3">
             Recursos Descargables
           </h1>
-          <p className="text-slate-600">
-            Códigos, esquemas, datasheets y más materiales para tus proyectos
+          <p className="text-lg text-slate-600">
+            Código, esquemas, documentación y más para tus proyectos
           </p>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+        {/* Filters */}
+        <div className="grid md:grid-cols-2 gap-4 mb-12">
+          <div className="relative">
+            <Search className="absolute left-4 top-4 w-5 h-5 text-slate-400" />
             <Input
-              placeholder="Buscar archivos..."
+              placeholder="Buscar recursos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 border-slate-300"
+              className="pl-12 py-3 text-base"
             />
           </div>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full md:w-64 border-slate-300">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Categoría" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map(cat => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  {cat.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="px-4 py-3 border border-slate-300 rounded-lg font-medium"
+          >
+            {categories.map(cat => (
+              <option key={cat.value} value={cat.value}>
+                {cat.label}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {isLoading ? (
-          <div className="text-center py-12">
-            <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-slate-600">Cargando archivos...</p>
-          </div>
-        ) : filteredFiles.length === 0 ? (
-          <Card className="bg-white border-slate-200 p-12 text-center">
-            <Download className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">
-              No se encontraron archivos
-            </h3>
-            <p className="text-slate-600">
-              {searchTerm || selectedCategory !== "all"
-                ? "Intenta ajustar los filtros de búsqueda"
-                : "Los recursos estarán disponibles próximamente"}
-            </p>
-          </Card>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredFiles.map((file) => {
-              const IconComponent = getCategoryIcon(file.category);
-              const colorGradient = getCategoryColor(file.category);
+        {/* Files by Module */}
+        {['introduccion', 'proyecto_1', 'proyecto_2'].map(module => {
+          const moduleFiles = filesByModule[module];
 
-              return (
-                <Card 
-                  key={file.id}
-                  className="bg-white border-slate-200 hover:shadow-lg transition-all duration-300"
-                >
-                  <CardHeader>
-                    <div className="flex items-start gap-3">
-                      <div className={`p-3 rounded-xl bg-gradient-to-br ${colorGradient} shadow-md flex-shrink-0`}>
-                        <IconComponent className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-slate-900 text-lg mb-2 truncate">
+          if (moduleFiles.length === 0) return null;
+
+          return (
+            <div key={module} className="mb-16">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="h-1 w-12 bg-blue-600 rounded-full" />
+                <h2 className="text-3xl font-bold text-slate-900">
+                  {moduleLabels[module]}
+                </h2>
+                <Badge className="bg-slate-100 text-slate-700">
+                  {moduleFiles.length} archivo{moduleFiles.length !== 1 ? 's' : ''}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {moduleFiles.map(file => {
+                  const Icon = getCategoryIcon(file.category);
+                  const color = getCategoryColor(file.category);
+
+                  return (
+                    <Card key={file.id} className="bg-white hover:shadow-xl transition-all duration-300 hover:border-blue-300 border-slate-200 overflow-hidden group">
+                      <CardHeader className={`bg-gradient-to-br ${color} text-white p-6`}>
+                        <div className="flex items-start justify-between">
+                          <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Icon className="w-6 h-6 text-white" />
+                          </div>
+                          <Badge className="bg-white/30 text-white border-0 capitalize">
+                            {file.category}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-6">
+                        <CardTitle className="text-slate-900 mb-2 line-clamp-2">
                           {file.name}
                         </CardTitle>
-                        <Badge className="bg-slate-100 text-slate-600 border-slate-300 capitalize">
-                          {file.category}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {file.description && (
-                      <p className="text-sm text-slate-600 mb-4 line-clamp-2">
-                        {file.description}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-between">
-                      {file.file_size && (
-                        <span className="text-sm text-slate-500">{file.file_size}</span>
-                      )}
-                      <Button
-                        size="sm"
-                        onClick={() => window.open(file.file_url, '_blank')}
-                        className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Descargar
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                        {file.description && (
+                          <p className="text-sm text-slate-600 mb-4 line-clamp-2">
+                            {file.description}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                          {file.file_size && (
+                            <span className="text-xs text-slate-500 font-medium">
+                              📦 {file.file_size}
+                            </span>
+                          )}
+                          <Button
+                            size="sm"
+                            onClick={() => window.open(file.file_url, '_blank')}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            Descargar
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+
+        {filteredFiles.length === 0 && (
+          <Card className="bg-white border-slate-200">
+            <CardContent className="p-16 text-center">
+              <Package className="w-16 h-16 text-slate-300 mx-auto mb-6" />
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                No hay recursos disponibles
+              </h3>
+              <p className="text-slate-600">
+                Intenta cambiar los filtros o vuelve más tarde
+              </p>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
