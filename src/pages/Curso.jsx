@@ -197,7 +197,7 @@ export default function CoursePage() {
                       </Badge>
                     </div>
                     <Button
-                      onClick={() => window.open(lesson.video_url, '_blank')}
+                      onClick={() => navigate(`/curso-video?lesson=${lesson.id}&module=${selectedModule}`)}
                       className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
                     >
                       <Play className="w-4 h-4 mr-2" />

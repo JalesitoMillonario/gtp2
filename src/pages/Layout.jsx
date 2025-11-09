@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
-import { Menu, X, LogOut, Home, BookOpen, Download, Settings, User, Shield } from "lucide-react";
+import { Menu, X, LogOut, Home, BookOpen, Download, Settings, User, Shield, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const API_URL = 'https://apicurso.bobinadosdumalek.es/api';
 
@@ -11,6 +12,7 @@ export default function Layout() {
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [needsPayment, setNeedsPayment] = useState(false);
 
   useEffect(() => {
     const getUser = async () => {
@@ -28,6 +30,14 @@ export default function Layout() {
         if (!res.ok) throw new Error('No autorizado');
         const data = await res.json();
         setUser(data);
+
+        if (data.role !== 'admin' && data.is_paid !== 1) {
+          setNeedsPayment(true);
+          const protectedPaths = ['/curso', '/descargas', '/dashboard'];
+          if (protectedPaths.some(path => location.pathname.startsWith(path))) {
+            navigate("/pago");
+          }
+        }
       } catch (err) {
         console.error('Error:', err);
         navigate("/login");
@@ -36,7 +46,7 @@ export default function Layout() {
       }
     };
     getUser();
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -68,23 +78,38 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen bg-slate-50">
-      {/* Sidebar */}
       <aside className={`${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0 fixed lg:relative w-64 h-screen bg-white border-r border-slate-200 shadow-sm transition-transform duration-300 z-40 flex flex-col`}>
         
-        {/* Logo */}
+        {/* Logo y Título */}
         <div className="p-6 border-b border-slate-100">
           <Link to="/dashboard" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-              <span className="text-white font-bold text-lg">BD</span>
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow overflow-hidden bg-white border border-slate-200">
+              <img 
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLUynrIbpNwiuzgjhzYhHFgPMyQyQHPoSg5w&s" 
+                alt="Logo Dumalek"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
-              <h2 className="font-bold text-slate-900 text-sm">Bobinados</h2>
-              <p className="text-xs text-slate-500">Dumalek</p>
+              <h2 className="font-bold text-slate-900 text-base">Bobinados Dumalek</h2>
+              <p className="text-xs text-slate-600 font-medium">Electrónica + IA</p>
             </div>
           </Link>
         </div>
+
+        {/* Alert de pago pendiente */}
+        {needsPayment && (
+          <div className="p-4">
+            <Alert className="bg-amber-50 border-amber-200">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800 text-xs ml-2">
+                Completa tu pago para acceder al curso
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
 
         {/* Navigation */}
         <nav className="flex-1 p-4 overflow-y-auto">
@@ -92,14 +117,18 @@ export default function Layout() {
             {menuItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
+              const disabled = needsPayment && ['/curso', '/descargas', '/dashboard'].some(path => item.href.startsWith(path));
+              
               return (
                 <Link
                   key={item.href}
-                  to={item.href}
+                  to={disabled ? '/pago' : item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                     active
                       ? 'bg-blue-50 text-blue-600 font-medium'
+                      : disabled
+                      ? 'text-slate-400 cursor-not-allowed'
                       : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
@@ -124,6 +153,11 @@ export default function Layout() {
                 {user.role === 'admin' && (
                   <span className="inline-block mt-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
                     Administrador
+                  </span>
+                )}
+                {user.is_paid === 1 && user.role !== 'admin' && (
+                  <span className="inline-block mt-2 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
+                    ✓ Acceso completo
                   </span>
                 )}
               </div>
@@ -162,9 +196,12 @@ export default function Layout() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
         
-        {/* Top Bar */}
+        {/* Top Bar Mobile */}
         <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between lg:hidden shadow-sm">
-          <h1 className="font-bold text-slate-900">Electrónica + IA</h1>
+          <div>
+            <h1 className="font-bold text-slate-900">ESP+GPT</h1>
+            <p className="text-xs text-slate-600">Electrónica + IA</p>
+          </div>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 hover:bg-slate-100 rounded-lg transition-colors"

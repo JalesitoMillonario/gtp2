@@ -1,19 +1,12 @@
+
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { 
-  CheckCircle2, 
-  Sparkles, 
-  Shield, 
-  Award, 
-  Users, 
-  Zap,
-  CreditCard,
-  Lock
-} from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { customApi } from "@/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, AlertCircle, CheckCircle2, Shield } from "lucide-react";
+
+const API_URL = 'https://apicurso.bobinadosdumalek.es/api';
 
 export default function PagoPage() {
   const navigate = useNavigate();
@@ -22,9 +15,27 @@ export default function PagoPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    customApi.auth.me()
-      .then(setUser)
-      .catch(() => navigate("/login"));
+    const getUser = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate("/login");
+          return;
+        }
+
+        const res = await fetch(`${API_URL}/users/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error('No autorizado');
+        const data = await res.json();
+        setUser(data);
+      } catch (err) {
+        console.error('Error:', err);
+        navigate("/login");
+      }
+    };
+    getUser();
   }, [navigate]);
 
   const handlePayment = async () => {
@@ -32,184 +43,236 @@ export default function PagoPage() {
     setError("");
 
     try {
-      // Aquí conectarás con Stripe
-      const response = await customApi.payments.createCheckoutSession({
-        priceId: "price_xxx", // Tu price ID de Stripe
-        successUrl: `${window.location.origin}/pago-exitoso`,
-        cancelUrl: `${window.location.origin}/pago`,
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`${API_URL}/payments/create-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ amount: 1799 })
       });
 
-      // Redirigir a Stripe Checkout
-      window.location.href = response.url;
+      const text = await response.text();
+
+      if (!response.ok) {
+        throw new Error(`Error: ${text}`);
+      }
+
+      const data = JSON.parse(text);
+
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        throw new Error('No se pudo procesar el pago');
+      }
     } catch (err) {
-      console.error("Error al procesar pago:", err);
+      console.error("Error:", err);
       setError("Error al procesar el pago. Intenta de nuevo.");
       setLoading(false);
     }
   };
 
-  const benefits = [
-    { icon: CheckCircle2, text: "Acceso de por vida a todo el contenido" },
-    { icon: Award, text: "Certificado oficial al completar" },
-    { icon: Users, text: "Comunidad privada de estudiantes" },
-    { icon: Zap, text: "Actualizaciones y contenido nuevo gratis" },
-    { icon: Shield, text: "Garantía de 30 días - Devolución completa" },
-  ];
-
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center">
-        <div className="text-white">Cargando...</div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 py-20 px-4">
-      <div className="max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <Sparkles className="w-12 h-12 text-cyan-400 mx-auto mb-4" />
-          <h1 className="text-5xl font-black text-white mb-4">
-            ¡Último Paso!
-          </h1>
-          <p className="text-xl text-slate-300">
-            Completa tu acceso a la Masterclass de Electrónica + IA
-          </p>
-        </motion.div>
+    <div className="min-h-screen bg-gray-50 py-8 px-4 md:py-16">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8 md:mb-12">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Bobinados Dumalek</h1>
+          <p className="text-gray-600 text-sm md:text-base">Completa tu acceso al curso</p>
+        </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Beneficios */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card className="bg-white/10 backdrop-blur-xl border-2 border-cyan-500/20">
-              <CardContent className="p-8">
-                <h3 className="text-2xl font-bold text-white mb-6">
-                  Lo que obtienes:
-                </h3>
-                <div className="space-y-4">
-                  {benefits.map((benefit, index) => {
-                    const Icon = benefit.icon;
-                    return (
-                      <div key={index} className="flex items-start gap-3">
-                        <Icon className="w-6 h-6 text-green-400 flex-shrink-0 mt-1" />
-                        <span className="text-slate-200">{benefit.text}</span>
-                      </div>
-                    );
-                  })}
+        <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+          {/* Left: Benefits & Info */}
+          <div className="md:col-span-2">
+            {/* What You Get */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 md:p-8 mb-6">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-6">
+                ¿Qué obtendrás?
+              </h2>
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm md:text-base">Acceso de por vida</p>
+                    <p className="text-xs md:text-sm text-gray-600">Aprende a tu ritmo sin límites</p>
+                  </div>
                 </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm md:text-base">9 lecciones en video</p>
+                    <p className="text-xs md:text-sm text-gray-600">Clases Full HD con ejemplos</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm md:text-base">2 proyectos completos</p>
+                    <p className="text-xs md:text-sm text-gray-600">IoT y sistemas embebidos</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm md:text-base">Recursos descargables</p>
+                    <p className="text-xs md:text-sm text-gray-600">Código y documentación</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm md:text-base">Comunidad privada</p>
+                    <p className="text-xs md:text-sm text-gray-600">Conecta con otros alumnos</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm md:text-base">Actualizaciones gratis</p>
+                    <p className="text-xs md:text-sm text-gray-600">Contenido nuevo incluido</p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                <div className="mt-8 p-4 bg-cyan-500/10 rounded-xl border border-cyan-500/30">
-                  <p className="text-sm text-cyan-300 text-center">
-                    🎓 Más de 500 estudiantes ya están aprendiendo
+            {/* Guarantee */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 md:p-8 mb-6">
+              <div className="flex items-start gap-3 md:gap-4">
+                <Shield className="w-6 h-6 md:w-8 md:h-8 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-blue-900 text-base md:text-lg">Garantía de 15 días</p>
+                  <p className="text-xs md:text-sm text-blue-800 mt-2">
+                    Si no queda completamente satisfecho durante los primeros 15 días, le devolveremos el 100% de su dinero, sin preguntas. Solo necesita notificarnos por email a soporte@bobinadosdumalek.es
                   </p>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+              </div>
+            </div>
 
-          {/* Pago */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Card className="bg-white/10 backdrop-blur-xl border-2 border-purple-500/30">
-              <CardContent className="p-8">
-                <div className="text-center mb-6">
-                  <div className="inline-flex items-baseline gap-2 mb-2">
-                    <span className="text-6xl font-black text-white">17</span>
-                    <span className="text-4xl font-bold text-white">,99€</span>
-                  </div>
-                  <p className="text-slate-300">Pago único - Acceso de por vida</p>
-                  
-                  <div className="mt-4 inline-block bg-red-500/20 border border-red-500/50 rounded-full px-4 py-2">
-                    <span className="text-red-300 font-bold text-sm">
-                      🔥 Oferta por tiempo limitado
-                    </span>
+            {/* Return Policy */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 md:p-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Política de Devolución</h3>
+              <div className="space-y-3 text-xs md:text-sm text-gray-700">
+                <p>
+                  <strong>Período de devolución:</strong> 15 días desde la fecha de compra
+                </p>
+                <p>
+                  <strong>Cómo solicitar:</strong> Envíe un email a soporte@bobinadosdumalek.es con su nombre y correo electrónico
+                </p>
+                <p>
+                  <strong>Procesamiento:</strong> Las devoluciones se procesan en 5-7 días hábiles
+                </p>
+                <p>
+                  <strong>Reembolso:</strong> Se acreditará en su cuenta bancaria o medio de pago original
+                </p>
+                <p className="text-gray-600 italic">
+                  No hay condiciones ocultas. Su satisfacción es nuestra prioridad.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Payment Card */}
+          <div>
+            <Card className="border border-gray-200 shadow-md sticky top-4 md:top-8">
+              <CardHeader className="border-b border-gray-100 pb-4 bg-gray-50">
+                <CardTitle className="text-base md:text-lg font-semibold text-gray-900">
+                  Resumen de compra
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="pt-6">
+                {/* Product */}
+                <div className="mb-6">
+                  <h3 className="font-semibold text-gray-900 text-sm md:text-base">
+                    Masterclass Electrónica + IA
+                  </h3>
+                  <p className="text-xs text-gray-600 mt-1">Acceso permanente</p>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-gray-200 my-4"></div>
+
+                {/* Price */}
+                <div className="flex justify-between items-baseline mb-2 text-xs md:text-sm">
+                  <span className="text-gray-700">Precio normal</span>
+                  <span className="text-gray-500 line-through">€99,99</span>
+                </div>
+                <div className="flex justify-between items-baseline mb-6">
+                  <span className="font-semibold text-gray-900">Hoy</span>
+                  <div className="text-right">
+                    <div className="text-2xl md:text-3xl font-bold text-gray-900">€17,99</div>
+                    <div className="text-xs text-green-600 font-medium">Ahorra 82%</div>
                   </div>
                 </div>
 
+                {/* Divider */}
+                <div className="border-t border-gray-200 my-4"></div>
+
+                {/* Error Alert */}
                 {error && (
-                  <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 text-sm">
-                    {error}
-                  </div>
+                  <Alert className="bg-red-50 border border-red-200 mb-6">
+                    <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                    <AlertDescription className="text-red-700 text-xs md:text-sm ml-2">
+                      {error}
+                    </AlertDescription>
+                  </Alert>
                 )}
 
+                {/* Payment Button */}
                 <Button
                   onClick={handlePayment}
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white font-bold py-6 text-lg shadow-2xl hover:shadow-purple-500/50 transition-all mb-4"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 mb-3 rounded-lg text-sm md:text-base"
                 >
                   {loading ? (
                     <>
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        className="w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"
-                      />
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Procesando...
                     </>
                   ) : (
-                    <>
-                      <CreditCard className="w-5 h-5 mr-2" />
-                      Pagar con Stripe
-                    </>
+                    'Acceso Inmediato'
                   )}
                 </Button>
 
-                <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
-                  <Lock className="w-4 h-4" />
-                  <span>Pago 100% seguro con Stripe</span>
-                </div>
+                <Button
+                  onClick={() => navigate("/dashboard")}
+                  disabled={loading}
+                  variant="outline"
+                  className="w-full text-gray-700 border-gray-300 hover:bg-gray-50 text-sm md:text-base"
+                >
+                  Volver
+                </Button>
 
-                <div className="mt-6 pt-6 border-t border-white/10">
-                  <h4 className="text-sm font-semibold text-white mb-3">
-                    Incluye:
-                  </h4>
-                  <ul className="space-y-2 text-sm text-slate-300">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                      9 lecciones en video HD
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                      3 proyectos prácticos completos
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                      Código fuente y recursos
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                      Soporte del instructor
-                    </li>
-                  </ul>
+                {/* Security Info */}
+                <p className="text-xs text-gray-500 text-center mt-4">
+                  🔒 Pago 100% seguro • Encriptación SSL
+                </p>
+
+                {/* Trust badges */}
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <p className="text-xs text-gray-600 text-center mb-3 font-medium">
+                    Confía en nosotros
+                  </p>
+                  <div className="flex justify-center gap-2 text-xs text-gray-600 flex-wrap">
+                    <span>✓ Pago seguro</span>
+                    <span>✓ Acceso inmediato</span>
+                    <span>✓ Garantía 15 días</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="mt-8 text-center"
-        >
-          <p className="text-slate-400 text-sm">
-            ¿Tienes dudas?{" "}
-            <a href="mailto:ventas@bobinadosdumalek.es" className="text-cyan-400 underline">
-              Contáctanos
-            </a>
-          </p>
-        </motion.div>
       </div>
     </div>
   );

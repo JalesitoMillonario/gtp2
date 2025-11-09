@@ -50,31 +50,31 @@ export default function LandingPage() {
     {
       icon: Cpu,
       title: "IA + Hardware",
-      desc: "Aprende a unir la potencia del procesamiento neuronal con componentes físicos. Desde visión por computadora hasta control de sistemas en tiempo real.",
+      desc: "Crea dispositivos que piensan por sí mismos. Aprende a combinar la potencia de la inteligencia artificial con componentes reales. Desde visión por computadora hasta control de sistemas en tiempo real: las mismas técnicas que usan los ingenieros en automatización y robótica avanzada.",
       gradient: "from-cyan-500 to-blue-600"
     },
     {
       icon: Video,
-      title: "9 Lecciones en Video",
-      desc: "Clases grabadas con calidad Full HD, ejemplos prácticos, y demostraciones en tiempo real para entender cada concepto paso a paso.",
+      title: "11 Lecciones en Video",
+      desc: "Aprende haciendo, no solo mirando. Clases grabadas con ejemplos reales, explicadas paso a paso. Diseñadas para que entiendas y apliques lo aprendido en tus propios proyectos o servicios.",
       gradient: "from-purple-500 to-pink-600"
     },
     {
       icon: Download,
       title: "Recursos Incluidos",
-      desc: "Código fuente, esquemas eléctricos, datasets y librerías optimizadas. Todo listo para usar y experimentar sin límites.",
+      desc: "Llévate las herramientas de un profesional. Código fuente, esquemas eléctricos, datasets y librerías listas para usar. Todo optimizado para que puedas experimentar, crear y monetizar tus proyectos sin empezar desde cero.",
       gradient: "from-green-500 to-emerald-600"
     },
     {
       icon: CircuitBoard,
-      title: "3 Proyectos Prácticos",
-      desc: "Construye desde cero un sistema IoT completo con ESP32-CAM, GPU remota y modelos de IA integrados.",
+      title: "2 Proyectos Prácticos",
+      desc: "Aplica todo y crea sistemas que se pagan solos. Construirás desde cero proyectos IoT con ESP32-CAM, GPU remota y modelos de IA integrados. Cada uno diseñado para demostrar tu dominio y abrirte puertas en el mercado tecnológico.",
       gradient: "from-orange-500 to-red-600"
     }
   ];
 
   const benefits = [
-    { icon: Shield, text: "Garantía de 30 días" },
+    { icon: Shield, text: "Garantía 30 días" },
     { icon: Award, text: "Certificado oficial" },
     { icon: Users, text: "Comunidad privada" },
     { icon: Zap, text: "Actualizaciones gratis" }
@@ -84,19 +84,19 @@ export default function LandingPage() {
     {
       name: "Carlos M.",
       role: "Ingeniero Electrónico",
-      text: "El mejor curso que he tomado. Aprendí a integrar IA en mis proyectos de una manera práctica y efectiva.",
+      text: "Antes de este curso no sabía cómo conectar mis modelos de IA con hardware real. Ahora mis proyectos detectan y reaccionan solos, y he empezado a ofrecer este servicio a clientes. Literalmente, ya me ha devuelto la inversión.",
       rating: 5
     },
     {
       name: "Laura G.",
       role: "Estudiante de Robótica",
-      text: "Explicaciones claras y proyectos reales. Exactamente lo que necesitaba para dar el siguiente paso.",
+      text: "Todo encajó. Venía de cursos llenos de teoría, pero aquí por fin vi cómo se aplicaba de verdad. Ahora estoy creando mi primer sistema de visión artificial para mi proyecto final. Es otro nivel.",
       rating: 5
     },
     {
       name: "Miguel R.",
       role: "Desarrollador IoT",
-      text: "Contenido de calidad profesional. He aplicado todo en mi trabajo y los resultados son increíbles.",
+      text: "El contenido es profesional y práctico. Implementé lo aprendido en una línea de producción real y el equipo quedó alucinado. Me ascendieron la siguiente semana.",
       rating: 5
     }
   ];
@@ -225,10 +225,10 @@ export default function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.2 }}
           >
-            Domina la Fusión entre <br />
+            Domina hoy lo que las <br />
             <span className="relative inline-block mt-4">
               <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent animate-gradient">
-                Electrónica e IA
+                empresas buscarán mañana
               </span>
               <motion.div
                 className="absolute -inset-2 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 blur-2xl -z-10"
@@ -250,8 +250,9 @@ export default function LandingPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.8 }}
           >
-            Aprende a integrar <span className="text-cyan-400 font-semibold">modelos de IA</span> con <span className="text-purple-400 font-semibold">hardware real</span>. 
-            Desde servidores con GPU hasta proyectos IoT con ESP32-CAM.
+            Sé de los primeros en integrar <span className="text-cyan-400 font-semibold">IA en hardware real</span>: desde servidores con GPU hasta proyectos IoT con <span className="text-purple-400 font-semibold">ESP32-CAM</span>.
+            <br />
+            Aprende lo que el <span className="text-cyan-400 font-semibold">1% de las empresas</span> buscan y conviértete en la mano derecha del CEO de cualquier empresa.
           </motion.p>
 
           <motion.div
@@ -265,7 +266,7 @@ export default function LandingPage() {
               className="group bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 hover:from-cyan-600 hover:via-blue-700 hover:to-purple-700 text-white text-lg px-10 py-7 shadow-2xl hover:shadow-cyan-500/50 transition-all hover:scale-105 font-bold relative overflow-hidden"
             >
               <span className="relative z-10 flex items-center gap-2">
-                🚀 Comenzar Ahora
+                🚀 Quiero estar por delante
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </span>
               <motion.div
@@ -282,7 +283,7 @@ export default function LandingPage() {
               className="border-2 border-cyan-400 text-cyan-300 hover:bg-cyan-500/20 text-lg px-10 py-7 backdrop-blur-sm font-bold group"
             >
               <Play className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-              Ver Demo del Curso
+              [VIDEO]
             </Button>
           </motion.div>
 
@@ -295,15 +296,15 @@ export default function LandingPage() {
           >
             <div className="flex items-center gap-2 text-cyan-300">
               <Users className="w-5 h-5" />
-              <span><strong className="text-white">500+</strong> estudiantes</span>
+              <span><strong className="text-white">+129</strong> futuros referentes</span>
             </div>
             <div className="flex items-center gap-2 text-cyan-300">
               <Award className="w-5 h-5" />
-              <span><strong className="text-white">4.9/5</strong> valoración</span>
+              <span><strong className="text-white">⭐ 5/5</strong> "No hay más"</span>
             </div>
             <div className="flex items-center gap-2 text-cyan-300">
               <CheckCircle2 className="w-5 h-5" />
-              <span><strong className="text-white">100%</strong> satisfacción</span>
+              <span><strong className="text-white">Acceso de por vida</strong></span>
             </div>
           </motion.div>
         </motion.div>
@@ -323,10 +324,11 @@ export default function LandingPage() {
             viewport={{ once: true }}
           >
             <h2 className="text-5xl md:text-6xl font-black mb-6">
-              Todo lo que <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">Aprenderás</span>
+              Todo lo que <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">vas a aprender</span>
             </h2>
             <p className="text-slate-400 text-xl max-w-3xl mx-auto leading-relaxed">
-              Desde los fundamentos de la inteligencia artificial hasta su aplicación en sistemas embebidos y control industrial.
+              Domina las tecnologías que las empresas empezarán a buscar mañana.
+              Aprende creando, conecta teoría con práctica y lleva tus proyectos al nivel profesional.
             </p>
           </motion.div>
 
@@ -364,8 +366,20 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            El Flujo <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">Profesional</span> que Dominarás
+            El flujo que <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">dominás para estar por delante</span>
           </motion.h2>
+
+          <motion.p
+            className="text-xl text-slate-300 text-center max-w-4xl mx-auto mb-16 leading-relaxed"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+          >
+            Dominar este flujo no solo te enseña el paso a paso: te coloca un paso por delante de la mayoría de técnicos e ingenieros.
+            <br />
+            Mientras otros aprenden teoría, tú estarás construyendo sistemas que se buscan en el mercado.
+          </motion.p>
 
           <div className="flex flex-col md:flex-row justify-center items-center gap-12">
             {[
@@ -415,8 +429,11 @@ export default function LandingPage() {
             viewport={{ once: true }}
           >
             <h2 className="text-5xl md:text-6xl font-black mb-6">
-              Lo que dicen nuestros <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">estudiantes</span>
+              Lo que dicen quienes ya se <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">adelantaron al resto</span>
             </h2>
+            <p className="text-slate-400 text-xl max-w-3xl mx-auto leading-relaxed">
+              Aplicando ejecutando y dejando de ser espectadores
+            </p>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -459,7 +476,7 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
           >
-            ¿Listo para <span className="bg-gradient-to-r from-cyan-300 to-white bg-clip-text text-transparent">Empezar</span>?
+            ¿Listo para <span className="bg-gradient-to-r from-cyan-300 to-white bg-clip-text text-transparent">adelantar a los demás</span>? 🚀
           </motion.h2>
 
           <motion.p
@@ -469,7 +486,11 @@ export default function LandingPage() {
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
           >
-            Acceso de por vida, soporte directo del instructor y actualizaciones constantes.
+            En unas horas puedes estar creando proyectos con IA y hardware real.
+            <br />
+            Acceso de por vida, soporte directo y actualizaciones constantes.
+            <br />
+            Lo que aprendas hoy te pondrá por delante de la mayoría en 2025.
           </motion.p>
 
           {/* Benefits */}

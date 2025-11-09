@@ -8,6 +8,7 @@ import Register from "./Register";
 import SocialLogin from "./SocialLogin";
 import Dashboard from "./Dashboard";
 import Curso from "./Curso";
+import CursoVideo from "./CursoVideo";
 import Descargas from "./Descargas";
 import Configuracion from "./Configuracion";
 import Perfil from "./Perfil";
@@ -37,6 +38,7 @@ export default function Pages() {
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/curso" element={<Curso />} />
+            <Route path="/curso-video" element={<CursoVideo />} />
             <Route path="/descargas" element={<Descargas />} />
             <Route path="/configuracion" element={<Configuracion />} />
             <Route path="/perfil" element={<Perfil />} />
